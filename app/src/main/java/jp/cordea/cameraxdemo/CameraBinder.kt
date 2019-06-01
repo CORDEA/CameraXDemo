@@ -18,6 +18,8 @@ class CameraBinder(
     private val textureView: TextureView
 ) {
     private val detector by lazy { FirebaseVision.getInstance().onDeviceTextRecognizer }
+    private var isProcessing: Boolean = false
+
 
     fun start() {
         val metrics = DisplayMetrics().also { textureView.display.getRealMetrics(it) }
@@ -59,9 +61,14 @@ class CameraBinder(
     }
 
     private fun recognizeText(image: Image, rotationDegrees: Int) {
+        if (isProcessing) {
+            return
+        }
+        isProcessing = true
         val visionImage = FirebaseVisionImage.fromMediaImage(image, rotationDegrees.toRotation())
         detector.processImage(visionImage)
             .addOnSuccessListener {
+                isProcessing = false
             }
     }
 
