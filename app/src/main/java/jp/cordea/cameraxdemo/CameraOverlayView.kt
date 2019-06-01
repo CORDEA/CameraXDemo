@@ -17,6 +17,12 @@ class CameraOverlayView @JvmOverloads constructor(
         color = context.getColor(R.color.colorAccent)
         style = Paint.Style.STROKE
         strokeWidth = 2.0f
+        textSize = 64.0f
+    }
+    private val textPaint = Paint().apply {
+        color = context.getColor(R.color.colorAccent)
+        style = Paint.Style.FILL
+        textSize = 64.0f
     }
 
     private var text: FirebaseVisionText? = null
@@ -46,6 +52,12 @@ class CameraOverlayView @JvmOverloads constructor(
                     box.right * widthAspect,
                     box.bottom * heightAspect,
                     paint
+                )
+                canvas.drawText(
+                    it.text,
+                    box.left * widthAspect,
+                    box.top * heightAspect,
+                    textPaint
                 )
             }
     }
