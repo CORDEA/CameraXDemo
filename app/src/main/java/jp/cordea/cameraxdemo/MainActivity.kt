@@ -3,6 +3,7 @@ package jp.cordea.cameraxdemo
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.ViewTreeObserver
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -26,7 +27,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         if (isCameraEnabled) {
-            cameraBinder.start()
+            textureView.viewTreeObserver.addOnGlobalLayoutListener(object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    cameraBinder.start()
+                    textureView.viewTreeObserver.removeOnGlobalLayoutListener(this)
+                }
+            })
             return
         }
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), REQUEST_CODE)

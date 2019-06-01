@@ -2,6 +2,9 @@ package jp.cordea.cameraxdemo
 
 import android.graphics.Matrix
 import android.media.Image
+import android.util.DisplayMetrics
+import android.util.Rational
+import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.view.ViewGroup
@@ -17,15 +20,23 @@ class CameraBinder(
     private val detector by lazy { FirebaseVision.getInstance().onDeviceTextRecognizer }
 
     fun start() {
-        val preview = Preview(PreviewConfig.Builder().build())
-        val analysis = ImageAnalysis(ImageAnalysisConfig.Builder().build()).apply {
+        val metrics = DisplayMetrics().also { textureView.display.getRealMetrics(it) }
+        val aspectRatio = Rational(metrics.widthPixels, metrics.heightPixels)
+        val preview = Preview(
+            PreviewConfig.Builder()
+                .setTargetResolution(Size(metrics.widthPixels, metrics.heightPixels))
+                .setTargetAspectRatio(aspectRatio)
+                .build()
+        )
+        val analysis = ImageAnalysis(
+            ImageAnalysisConfig.Builder().build()
+        ).apply {
             setAnalyzer { image, rotationDegrees ->
                 image?.image?.let {
                     recognizeText(it, rotationDegrees)
                 }
             }
         }
-
         preview.setOnPreviewOutputUpdateListener {
             val parent = textureView.parent as ViewGroup
             parent.removeView(textureView)
