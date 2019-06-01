@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
             Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
 
-    private val cameraBinder by lazy { CameraBinder(this, textureView) }
+    private val cameraBinder by lazy { CameraBinder(this, textureView, cameraOverlayView) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

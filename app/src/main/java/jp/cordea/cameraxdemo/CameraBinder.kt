@@ -2,36 +2,44 @@ package jp.cordea.cameraxdemo
 
 import android.graphics.Matrix
 import android.media.Image
-import android.util.DisplayMetrics
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.view.ViewGroup
 import androidx.camera.core.*
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.lifecycle.LifecycleOwner
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 
 class CameraBinder(
     private val owner: LifecycleOwner,
-    private val textureView: TextureView
+    private val textureView: TextureView,
+    private val cameraOverlayView: CameraOverlayView
 ) {
+    companion object {
+        private const val HEIGHT = 640
+        private const val WIDTH = 480
+    }
+
     private val detector by lazy { FirebaseVision.getInstance().onDeviceTextRecognizer }
     private var isProcessing: Boolean = false
 
-
     fun start() {
-        val metrics = DisplayMetrics().also { textureView.display.getRealMetrics(it) }
-        val aspectRatio = Rational(metrics.widthPixels, metrics.heightPixels)
+        val rational = Rational(WIDTH, HEIGHT)
+        val size = Size(WIDTH, HEIGHT)
         val preview = Preview(
             PreviewConfig.Builder()
-                .setTargetResolution(Size(metrics.widthPixels, metrics.heightPixels))
-                .setTargetAspectRatio(aspectRatio)
+                .setTargetResolution(size)
+                .setTargetAspectRatio(rational)
                 .build()
         )
         val analysis = ImageAnalysis(
-            ImageAnalysisConfig.Builder().build()
+            ImageAnalysisConfig.Builder()
+                .setTargetResolution(size)
+                .setTargetAspectRatio(rational)
+                .build()
         ).apply {
             setAnalyzer { image, rotationDegrees ->
                 image?.image?.let {
@@ -44,10 +52,17 @@ class CameraBinder(
             parent.removeView(textureView)
             parent.addView(textureView, 0)
             textureView.surfaceTexture = it.surfaceTexture
+            val textureSize = it.textureSize
+            (textureView.layoutParams as ConstraintLayout.LayoutParams).applyDimensionRatio(textureSize)
+            (cameraOverlayView.layoutParams as ConstraintLayout.LayoutParams).applyDimensionRatio(textureSize)
             update()
         }
 
         CameraX.bindToLifecycle(owner, preview, analysis)
+    }
+
+    private fun ConstraintLayout.LayoutParams.applyDimensionRatio(size: Size) {
+        dimensionRatio = "H,${size.height}:${size.width}"
     }
 
     private fun update() {
@@ -68,6 +83,7 @@ class CameraBinder(
         val visionImage = FirebaseVisionImage.fromMediaImage(image, rotationDegrees.toRotation())
         detector.processImage(visionImage)
             .addOnSuccessListener {
+                cameraOverlayView.update(visionImage, it)
                 isProcessing = false
             }
     }
